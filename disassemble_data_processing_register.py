@@ -11,3 +11,8 @@
 #LSL w1, w2, w3 
 #LSR w1, w2, w3 
 #MOV w1, w2
+instructions = ['ADD' ,'ADDS' ,'SUB' ,'SUBS' ,'ASR' ,'AND' ,'CMP' ,'LSL' ,'LSR' ,'MOV']
+inst_mask = ['00000000000000000000011111111110']
+def interpret(opcode):
+	pass
+
