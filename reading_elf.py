@@ -2,7 +2,7 @@
 from elftools.elf.elffile import ELFFile
 from fetch_instructions import get_instructions
 from identify_instruction_class import identify_class
-import disassemble_data_processing_register 
+import data_processing_register 
 import sys
 import codecs
 
@@ -26,7 +26,7 @@ def main():
 			cl = "Unidentified " 
 		else:
 			if class_code == 4:
-				disassemble_data_processing_register.interpret(inst_list[i])
+				data_processing_register.interpret(inst_list[i])
 			cl = inst_class_code_mapping[class_code]
 		print i, " : " , inst_list[i], " Class : ", cl
 

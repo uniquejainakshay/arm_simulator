@@ -11,7 +11,7 @@ inst_class_identifier= ['00000000000000000000000000000000', '0000000000000000000
 #  1 		Data processing - Immediate 
 #  2 		Branch, exception generation and system instructions'
 #  3 		Loads and stores
-#  4 		Data processing - register', ' Data processing - SIMD and floating point
+#  4 		Data processing - register', 
 #  5 		Data processing - SIMD and floating point'
 #  6 		Data processing - SIMD and floating point'
 

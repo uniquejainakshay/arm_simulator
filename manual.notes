@@ -1,4 +1,8 @@
 page 115 : structure of a64 assembler language
 404 : alphabetical list of instructions
 178 : instruction index by encoding ( classify the instructions from its encoding) 
-
+53 : arm memory model 
+59 : registers in Aarch64 execution state
+67 : application level memory model 
+115: syntax of the manual 
+126 : syntax for instructions 
