@@ -31,5 +31,5 @@ class instruction():
 		self.operation = func
 
 	# Execute the instruction 
-	def execute(self, execute, context):
-		self.operation(context)
+	def execute(self, context):
+		self.operation(self, context)

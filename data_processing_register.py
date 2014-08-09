@@ -59,6 +59,18 @@ def interpret(opcode):
 				inst.opcode_br['imm3'] = opcode[10:13][::-1]
 				inst.opcode_br['Rn'] = opcode[5:10][::-1]
 				inst.opcode_br['Rd'] = opcode[0:5][::-1]
+				inst.operation = ADD_EXTENDED_REGISTER_OP
+				return inst
+
+
+
+
+
+def ADD_EXTENDED_REGISTER_OP(instruction, context):
+	print "Executing ADD_EXTENDED_REGISTER:"	
+	for i in instruction.opcode_br:
+		print i, " : " , instruction.opcode_br[i]
+				
 				
 
 

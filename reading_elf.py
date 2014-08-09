@@ -24,11 +24,12 @@ def main():
 		class_code = identify_class(inst_list[i])
 		if(i == -1):
 			cl = "Unidentified " 
-		else:
-			if class_code == 4:
-				data_processing_register.interpret(inst_list[i])
-			cl = inst_class_code_mapping[class_code]
+		elif class_code == 4:
+			inst_obj = data_processing_register.interpret(inst_list[i])
+			inst_obj.execute(None)
+		cl = inst_class_code_mapping[class_code]
 		print i, " : " , inst_list[i], " Class : ", cl
+
 
 	#print "Stream" , elf_handle.stream
 	#print "elf class " , elf_handle.elfclass
