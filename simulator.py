@@ -31,4 +31,5 @@ def check_if_elf_file(file_name):
 		return False
 	
 
+
 main()
