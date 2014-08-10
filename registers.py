@@ -6,7 +6,7 @@
 # Registers PC SP
 
 
-class context():
+class Context():
 	def __init__(self):
 		self.regs = ['w0',  'w1',  'w2',  'w3',  'w4',  'w5',  'w6',  'w7',  'w8',  'w9',  'w10',
 		'w11',  'w12',  'w13',  'w14',  'w15',  'w16',  'w17',  'w18',  'w19',  'w20',
@@ -47,7 +47,7 @@ class context():
 
 
 
-	def set_reg(self, reg_name, value):
+	def set_regval(self, reg_name, value):
 		reg_name  = reg_name.lower()
 
 		# Check if register being set is valid 
@@ -125,7 +125,7 @@ class context():
 
 
 ##  Code for testing registes class 
-cont = context()
-cont.set_reg('sp', int('abcdabcdabcdabcd', base=16))
-cont.set_reg('pc', int('abcdabcdabcdabcd', base=16))
-cont.print_hex()
+#cont = context()
+#cont.set_reg('sp', int('abcdabcdabcdabcd', base=16))
+#cont.set_reg('pc', int('abcdabcdabcdabcd', base=16))
+#cont.print_hex()

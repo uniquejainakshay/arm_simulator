@@ -67,15 +67,8 @@ def interpret(opcode):
 
 
 def ADD_EXTENDED_REGISTER_OP(instruction, context):
-	print "Executing ADD_EXTENDED_REGISTER:"	
-	for i in instruction.opcode_br:
-		print i, " : " , instruction.opcode_br[i]
+	print "Executing ADD_EXTENDED_REGISTER:"
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)
 				
-				
-
-
-
-
-
-
-

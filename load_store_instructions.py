@@ -7,3 +7,5 @@
 #STP w1, w2, [x1], #12
 #STR w1, [x1], #24
 
+def interpret(opcode):
+	pass

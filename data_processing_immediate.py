@@ -5,3 +5,5 @@
 # ADD_IMMEDIATE4 eg ADD w1, w2, #4 eg ADD w1, w2, #4 eg ADD w1, w2, #4
 #ADRP x2, _start
 
+def interpret(opcode):
+	pass

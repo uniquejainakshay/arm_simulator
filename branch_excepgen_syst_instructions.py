@@ -10,3 +10,5 @@
 #BL      subC
 #NOP
 
+def interpret(opcode):
+	pass

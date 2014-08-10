@@ -5,13 +5,13 @@
 #	memory address in PC reg using translator class and fetch the required index. 
 
 from instruction import instruction
-class pipeline():
+class Pipeline():
 	def __init__(self):
 		# list that contains the instructions
 		self.inst_list = []	
 
 	# enqueue the instruction in the list
-	def enqueue(inst):
+	def enqueue(self, inst):
 		if not isinstance(inst, instruction):
 			print "Error : Object \"{0}\" cannot be enqueued in the pipeline".format(type(inst))
 			exit()
@@ -19,7 +19,7 @@ class pipeline():
 
 
 	#fetch the instruction at the said index from the list
-	def fetch(inst_no):
+	def fetch(self, inst_no):
 		if inst_no not in range(len(self.inst_list)):
 			print "Fetching instruction number : {0} failed.\
 			Instruction out of bounds (0, {1})".format(inst_no, len(self.inst_list))
@@ -27,3 +27,7 @@ class pipeline():
 
 		else:
 			return self.inst_list[inst_no]
+
+	# get length of the instruction queue	
+	def get_len(self):
+		return len(self.inst_list)
