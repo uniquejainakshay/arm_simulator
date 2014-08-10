@@ -94,16 +94,51 @@ def interpret(opcode):
 				inst.opcode_br['Rm'] = Rm
 				inst.opcode_br['Rn'] = Rn
 				inst.opcode_br['Rd'] = Rd
-				inst.disassembly = 'ADD {0}, {1}, {2}'.format(Rd, Rm, Rn)
+				inst.disassembly = 'ADD {0}, {1}, {2}'.format(Rd, Rn, Rm)
 				inst.operation = ADD_EXTENDED_REGISTER_OP
 				return inst
 
 			elif i ==1:
 				# ADD_SHIFTED_REGISTER
 				inst = instruction(opcode)
-				opc_Rd = opcode[0:5]
-				opc_Rn = opcode[5:10]
-				opc_Rm = opcode[16:21]
+				opc_Rd = opcode[0:5][::-1]
+				opc_Rn = opcode[5:10][::-1]
+				opc_Rm = opcode[16:21][::-1]
+				opc_imm6 = opcode[10:16][::-1]
+				opc_shift = opcode[22:24][::-1]
+				opc_sf = opcode[31]
+				d = int( opc_Rd , base=2)
+				n = int( opc_Rn , base=2)
+				m = int( opc_Rn , base=2)
+
+				if opc_sf == '1':
+					# 64 bit execution
+					Rd = 'x' + str(d)
+					Rn = 'x' + str(n)
+					Rm = 'x' + str(m)
+				else:
+					# 32 bit execution
+					Rd = 'w' + str(d)
+					Rn = 'w' + str(n)
+					Rm = 'w' + str(m)
+
+				if int(opc_shift, base=2) == 0:
+					shift = 'LSL'
+				elif int(opc_shift, base=2) == 1:
+					shift = 'LSR'
+				else :
+					shift = 'ASR'
+
+				amount = i
+
+				inst.opcode_br['Rd'] = Rd
+				inst.opcode_br['Rn'] = Rn
+				inst.opcode_br['Rm'] = Rm
+				inst.disassembly = 'ADD {0}, {1}, {2}'.format(Rd, Rn, Rm)
+				inst.operation = ADD_EXTENDED_REGISTER_OP
+				return inst
+
+
 
 
 

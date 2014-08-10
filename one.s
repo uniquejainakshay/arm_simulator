@@ -1,4 +1,5 @@
 .global _start
 
+.word 12
 _start:
-add w3, w1, w2, lsl  #4
+add w1, w2,#4 

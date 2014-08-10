@@ -16,7 +16,6 @@ from registers import Context
 context = Context() 	# Register context
 memory = dict() 	# Memory : To be set by shashank  
 _start = -1 		# The location in program counter from where we start the execution
-min_sh_addr = pow(2,33)
 stack_start = pow(2,33)
 stack_size  = 50
 _text_start = -1
@@ -62,7 +61,6 @@ def run(elf_file , debug = False):
 	global memory
 	global _start
 	global _text_len
-	global min_sh_addr
 	global stack_start
 	global stack_size
 	global _text_start, translation, pipeline
@@ -78,7 +76,6 @@ def run(elf_file , debug = False):
 				sh_size 	= i.__dict__['header']['sh_size']
 				sh_addralign 	= i.__dict__['header']['sh_addralign']
 				
-				min_sh_addr = min(min_sh_addr, sh_addr)
 							
 				if i.__dict__['name'] == ".text":
 					_text_len = sh_size
@@ -107,10 +104,14 @@ def run(elf_file , debug = False):
 					if j.__dict__['name'] == "_start":
 						_start = j.__dict__['entry']['st_value']
 	
-	# Setting up stack 
-	for i in range(min_sh_addr - stack_size, min_sh_addr):
+
+	# setting up stack at the end of the memory image
+	
+	#getting the last allocated mem location
+	mem_end = sorted(memory.keys())[-1]
+	for i in range(mem_end + 1, mem_end + stack_size + 1):
 		memory[i] = '\x00'
-	stack_start = min_sh_addr - stack_size	
+	stack_start = mem_end + 1
 
 
 	# fetch instructions from the .text section till length of the section
@@ -166,7 +167,9 @@ def run(elf_file , debug = False):
 		pc = context.get_regval('pc')
 		index = translator.translate(pc)
 		inst = pipeline.fetch(index)
+		context.set_regval('w2', 23)
 		inst.execute(context)
+		context.print_dec()
 
 	
 

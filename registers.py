@@ -20,7 +20,7 @@ class Context():
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
-		0 , 0 , 0 , 0 , 0 , 0, 0]
+		0 , 0 , 0 , 0 , 0 , 0, 0, 0]
 
 		self.flags = {'n':0 , 'z':0 , 'c':0, 'v':0}
 	
@@ -45,7 +45,7 @@ class Context():
 			final_val = higher_32_val * pow(2, 32) + lower_32_val
 			return final_val
 		elif reg_name == 'sp':
-			lower_32_val = self.va;[self.regs.index('wsp')]
+			lower_32_val = self.val[self.regs.index('wsp')]
 			higher_32_val = self.val[self.regs.index('sp')]
 			return higher_32_val * pow(2, 32) + lower_32_val
 		else:
@@ -108,7 +108,9 @@ class Context():
 				print self.regs[i], "\t\t", 
 			print '\n'
 			for i in range(lb, ub):
-				print self.val[i], "\t\t", 
+				reg = self.regs[i]
+				value = self.get_regval(reg)
+				print value, "\t\t", 
 			print '\n'
 			#print "-----------------------------------------------------------------------------------"
 
