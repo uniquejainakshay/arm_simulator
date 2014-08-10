@@ -1,5 +1,4 @@
 .global _start
 
 _start:
-label : ADD w1, w2, w3, sxtw
-
+add w3, w1, w2, lsl  #4

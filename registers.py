@@ -14,13 +14,15 @@ class Context():
 		'x0',  'x1',  'x2',  'x3',  'x4',  'x5',  'x6',  'x7',  'x8',  'x9',  'x10',
 		'x11',  'x12',  'x13',  'x14',  'x15',  'x16',  'x17',  'x18',  'x19',  'x20',
 		'x21',  'x22',  'x23',  'x24',  'x25',  'x26',  'x27',  'x28',  'x29',  'x30',
-		'pc', 'sp']
+		'pc', 'sp', 'wsp']
 
 		self.val = [
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 		0 , 0 , 0 , 0 , 0 , 0, 0]
+
+		self.flags = {'n':0 , 'z':0 , 'c':0, 'v':0}
 	
 	#returns the content of the register, specified in the argument 	
 	def get_regval(self, reg_name):
@@ -42,6 +44,10 @@ class Context():
 			higher_32_val  = self.val[self.regs.index(reg_name)]
 			final_val = higher_32_val * pow(2, 32) + lower_32_val
 			return final_val
+		elif reg_name == 'sp':
+			lower_32_val = self.va;[self.regs.index('wsp')]
+			higher_32_val = self.val[self.regs.index('sp')]
+			return higher_32_val * pow(2, 32) + lower_32_val
 		else:
 			return self.val[self.regs.index(reg_name)]
 
@@ -79,9 +85,15 @@ class Context():
 			self.val[self.regs.index('w'+reg_no)] = lower_32_val
 			return
 
+		# 64 bit SP access, 32 bit gets covered in the else part 
+		elif reg_name == 'sp':
+			lower_32_val = value % pow(2, 32)
+			higher_32_val = value / pow(2, 32)
+			self.val[self.regs.index(reg_name)] = higher_32_val
+			self.val[self.regs.index('wsp')] = lower_32_val
 		else:
 			self.val[self.regs.index(reg_name)] = value
-			return 
+		return 
 	def print_dec(self):
 		no_regs = len(self.regs)
 		for j in range((no_regs / 5) + 1):
@@ -125,7 +137,7 @@ class Context():
 
 
 ##  Code for testing registes class 
-#cont = context()
-#cont.set_reg('sp', int('abcdabcdabcdabcd', base=16))
-#cont.set_reg('pc', int('abcdabcdabcdabcd', base=16))
+#cont = Context()
+#cont.set_regval('w0',2) 
+#cont.set_regval('pc', int('abcdabcdabcdabcd', base=16))
 #cont.print_hex()

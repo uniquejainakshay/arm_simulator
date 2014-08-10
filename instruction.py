@@ -24,6 +24,7 @@ class instruction():
 
 		# Assembly language equivalent of the opcode
 		self.disassembly = ''
+
 		# may be some additional fields like location, may be added later 
 
 	# Set the function to be called when the instruction is executed
