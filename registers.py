@@ -113,6 +113,8 @@ class Context():
 				print value, "\t\t", 
 			print '\n'
 			#print "-----------------------------------------------------------------------------------"
+		print "n\t\tz\t\tc\t\tv"
+		print "{0}\t\t{1}\t\t{2}\t\t{3}".format(self.flags['n'] , self.flags['z'] ,self.flags['c'] ,self.flags['v'] )
 
 
 	def print_hex(self):
@@ -136,6 +138,8 @@ class Context():
 					#print "this is str : " , i
 			print '\n'
 			#print "-----------------------------------------------------------------------------------"
+		print "n\t\tz\t\tc\t\tv"
+		print "{0}\t\t{1}\t\t{2}\t\t{3}".format(self.flags['n'] , self.flags['z'] ,self.flags['c'] ,self.flags['v'] )
 
 
 ##  Code for testing registes class 

@@ -167,8 +167,8 @@ def run(elf_file , debug = False):
 		pc = context.get_regval('pc')
 		index = translator.translate(pc)
 		inst = pipeline.fetch(index)
-		context.set_regval('w2', 23)
 		inst.execute(context)
+		print inst.disassembly
 		context.print_dec()
 
 	

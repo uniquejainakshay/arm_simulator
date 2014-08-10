@@ -1,2 +1,3 @@
 #!/bin/bash
-python simulator.py one
+./as one.s -o one
+./simulator.py one

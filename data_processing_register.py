@@ -13,6 +13,7 @@
 #MOV w1, w2
 
 from instruction import instruction
+from common_functions import *
 
 ##################   Instructions 
 instructions = [
@@ -53,12 +54,13 @@ def interpret(opcode):
 			if i == 0:
 				# ADD_EXTENDED_REGISTER
 				inst = instruction(opcode)
+				inst.opcode_br['sf'] = opcode[31]
 				opc_sf = opcode[31]
-				opc_Rm= opcode[16:21][::-1]
-				opc_option = opcode[13:16][::-1]
-				opc_imm3 = opcode[10:13][::-1]
+				inst.opcode_br['option'] = opcode[13:16][::-1]
+				inst.opcode_br['imm3'] = opcode[10:13][::-1]
 				opc_Rn = opcode[5:10][::-1]
 				opc_Rd = opcode[0:5][::-1]
+				opc_Rm= opcode[16:21][::-1]
 
 				d = int( opc_Rd , base=2)
 				n = int( opc_Rn , base=2)
@@ -94,6 +96,9 @@ def interpret(opcode):
 				inst.opcode_br['Rm'] = Rm
 				inst.opcode_br['Rn'] = Rn
 				inst.opcode_br['Rd'] = Rd
+
+############## imcomplete
+
 				inst.disassembly = 'ADD {0}, {1}, {2}'.format(Rd, Rn, Rm)
 				inst.operation = ADD_EXTENDED_REGISTER_OP
 				return inst
@@ -104,12 +109,17 @@ def interpret(opcode):
 				opc_Rd = opcode[0:5][::-1]
 				opc_Rn = opcode[5:10][::-1]
 				opc_Rm = opcode[16:21][::-1]
-				opc_imm6 = opcode[10:16][::-1]
-				opc_shift = opcode[22:24][::-1]
+				inst.opcode_br['imm6'] = opcode[10:16][::-1]
+				inst.opcode_br['shift']= opcode[22:24][::-1]
+				opc_shift= opcode[22:24][::-1]
 				opc_sf = opcode[31]
+				inst.opcode_br['sf'] = opcode[31]
+
 				d = int( opc_Rd , base=2)
 				n = int( opc_Rn , base=2)
-				m = int( opc_Rn , base=2)
+				m = int( opc_Rm , base=2)
+			
+
 
 				if opc_sf == '1':
 					# 64 bit execution
@@ -129,13 +139,13 @@ def interpret(opcode):
 				else :
 					shift = 'ASR'
 
-				amount = i
-
+				amount = int(opcode[10:16][::-1], base=2)
 				inst.opcode_br['Rd'] = Rd
 				inst.opcode_br['Rn'] = Rn
 				inst.opcode_br['Rm'] = Rm
-				inst.disassembly = 'ADD {0}, {1}, {2}'.format(Rd, Rn, Rm)
-				inst.operation = ADD_EXTENDED_REGISTER_OP
+				inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
+				inst.operation = ADD_SHIFTED_REGISTER_OP
+
 				return inst
 
 
@@ -148,4 +158,24 @@ def ADD_EXTENDED_REGISTER_OP(instruction, context):
 	print "ADD_EXTENDED_REGISTER : Not implemented yet"
 	pc += 4
 	context.set_regval('pc', pc)
-				
+			
+
+
+def ADD_SHIFTED_REGISTER_OP(inst, context):
+	datasize = 64 if inst.opcode_br['sf']== '1' else 32
+	sub_op = False
+	setflags = False
+	shift_type = DecodeShift(inst.opcode_br['shift'])
+	shift_amount = UInt(inst.opcode_br['imm6'])
+	operand1 = bin (context.get_regval(inst.opcode_br['Rn']))[2:]
+	operand1 = ZeroExtend(operand1, 64)
+	operand2 = ShiftReg(context.get_regval(inst.opcode_br['Rm']), shift_type, shift_amount)
+	result , n, z, c, v = AddWithCarry(operand1, operand2, '0')
+
+	# here we need to set the x register
+	reg_no = inst.opcode_br['Rd'][1:]
+	#print "result " , result, " reg no " , reg_no
+	context.set_regval('x' + reg_no, result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)
