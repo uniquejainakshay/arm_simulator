@@ -13,7 +13,9 @@ from common_functions import *
 ##################   Instructions 
 instructions = [
 #0
-'ADD_IMMEDIATE' 
+'ADD_IMMEDIATE', 
+#1
+'ADDS_IMMEDIATE'
 ]
 
 
@@ -21,6 +23,8 @@ instructions = [
 
 inst_mask = [
 #0
+'00000000000000000000000011111110', 
+#1
 '00000000000000000000000011111110' 
 ]
 
@@ -29,6 +33,8 @@ inst_mask = [
 
 inst_identifier = [
 #0
+'00000000000000000000000010001000',
+#1
 '00000000000000000000000010001000'
 ]
 
@@ -38,7 +44,9 @@ def interpret(opcode):
 		masked_opcode = int(opcode, base=2) & int(inst_mask[i], base =2)
 		if masked_opcode == int(inst_identifier[i], base=2):
 
-			if i == 0:
+			if instructions[i] == 'ADD_IMMEDIATE' or\
+				instructions[i] == 'ADDS_IMMEDIATE':
+
 				# ADD_IMMEDIATE
 				inst = instruction(opcode)
 				inst.opcode_br['sf'] = opcode[31]
@@ -89,18 +97,34 @@ def interpret(opcode):
 				
 				imm = hex(int(inst.opcode_br['imm12'], base = 2))
 				shift = hex(inst.opcode_br['shift'])
-				inst.disassembly = "ADD ", inst.opcode_br['Rd']+", ", inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+				if instructions[i] == 'ADD_IMMEDIATE':
+					inst.disassembly = "ADD ", inst.opcode_br['Rd']+", ", 
+					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+					inst.operation = ADDS_IMMEDIATE_OP;
+				elif instructions[i] == 'ADDS_IMMEDIATE' :
+					inst.disassembly = "ADDS ", inst.opcode_br['Rd']+", ", 
+					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+					inst.operation = ADDS_IMMEDIATE_OP;
 				
-				inst.operation = ADD_IMMEDIATE;
 				return inst
 
-def ADD_IMMEDIATE(inst, context):
-	print "Executing ADD_IMMEDIATE"
+def ADD_IMMEDIATE_OP(inst, context):
 	operand2 = inst.opcode_br['imm']
 	operand1 = ZeroExtend(bin(context.get_regval(inst.opcode_br['Rn']))[2:], len(operand2))
 
 	result, n, z, c, v = AddWithCarry(operand1, operand2, '0')
 	context.set_regval(inst.opcode_br['Rd'], result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)
+
+def ADDS_IMMEDIATE_OP(inst, context):
+	operand2 = inst.opcode_br['imm']
+	operand1 = ZeroExtend(bin(context.get_regval(inst.opcode_br['Rn']))[2:], len(operand2))
+
+	result, n, z, c, v = AddWithCarry(operand1, operand2, '0')
+	context.set_regval(inst.opcode_br['Rd'], result)
+# setting flags as adds instruction
 	context.flags['n'] = n
 	context.flags['z'] = z
 	context.flags['c'] = c
@@ -110,4 +134,3 @@ def ADD_IMMEDIATE(inst, context):
 	pc = context.get_regval('pc')
 	pc += 4
 	context.set_regval('pc', pc)
-

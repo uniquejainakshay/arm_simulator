@@ -166,9 +166,15 @@ def run(elf_file , debug = False):
 	while True:
 		pc = context.get_regval('pc')
 		index = translator.translate(pc)
+
+#### default regsiter values 
+		context.set_regval('w1', 2)
+		context.set_regval('w2', 2)
+
+###
 		inst = pipeline.fetch(index)
-		inst.execute(context)
 		print inst.disassembly
+		inst.execute(context)
 		context.print_dec()
 
 	

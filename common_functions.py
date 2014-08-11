@@ -28,7 +28,6 @@ def AddWithCarry(x, y, carry_in):
 	
 	N = len(x)
 	unsigned_sum = UInt(x) + UInt(y) + UInt(carry_in);
-	print x, y, unsigned_sum
 	signed_sum = SInt(x) + SInt(y) + UInt(carry_in);
 	result = int(bin(unsigned_sum)[2:][::-1][0:N][::-1], base = 2)
 	n = ZeroExtend(bin(result)[2:], N)[::-1][N-1]
@@ -71,7 +70,7 @@ def ShiftReg(oprand, shift_type, shift_amount):
 	elif shift_type == 'ShiftType_ASR':
 		oprand = bin(oprand)[2:]
 		extended_x = SignExtend(oprand, shift_amount  +64);
-		print extended_x
+		#print extended_x
 		result = extended_x[0:-shift_amount]
 		return result
 	else:
@@ -85,6 +84,7 @@ def SignExtend( x,  N):
 	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
 	# N is python integer
 	M = len(x)
+	#print "Value of x " , x
 	return Replicate(x[::-1][M-1], N-M) + x;
 
 def Replicate(b, N):
@@ -118,7 +118,7 @@ def ExtendReg(m, extend_type, shift, context):
 	unsigned, len_= v[i][0], v[i][1]
 	len_ = min(len_, N - shift)
 	
-	return Extend(val[::-1][len_-1:0] + Zeros(shift), N, unsigned);
+	return Extend(val[::-1][0:len_ ][::-1] + Zeros(shift), N, unsigned);
 	
 	
 def NOT(x):
@@ -135,13 +135,13 @@ def Extend(x, N, unsigned):
 	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
 	# N is python integer
 	# unsigned is boolean
-	
+	#print "In function extend " , x	
 	return ZeroExtend(x, N) if unsigned else SignExtend(x, N);
 
 def ZeroExtend(x, N):
 	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
 	# N is python integer
-	assert N >= M
+	M = len(x)
 	return Zeros(N-M)+x	
 	
 	
@@ -149,7 +149,7 @@ def Ones(N):
 	return Replicate('1', N)
 	
 	
-def DecodeBitMasks(immN, imms, immr, boolean immediate):
+def DecodeBitMasks(immN, imms, immr, immediate):
 	# immN is 1 bit binary string with MSB at 0 index, with no 0b prefix.
 	# imms is 6 bit binary string with MSB at 0 index, with no 0b prefix.	
 	# immr is 6 bit binary string with MSB at 0 index, with no 0b prefix.		
@@ -162,7 +162,7 @@ def DecodeBitMasks(immN, imms, immr, boolean immediate):
 	
 	S = UInt(ZeroExtend( bin( int(imms, base = 2)&int(levels, base = 2) )[2:], 6))
 	R = UInt(ZeroExtend( bin( int(immr, base = 2)&int(levels, base = 2) )[2:], 6))
-	diff = ZeroExtend(bin(S-R)[2:], 6))
+	diff = ZeroExtend(bin(S-R)[2:], 6)
 	
 	esize = 1 << len_
 	d = UInt(diff)

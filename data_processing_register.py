@@ -20,7 +20,11 @@ instructions = [
 #0
 'ADD_EXTENDED_REGISTER' , 
 #1
-'ADD_SHIFTED_REGISTER'
+'ADD_SHIFTED_REGISTER', 
+#2
+'ADDS_EXTENDED_REGISTER',
+#3
+'ADDS_SHIFTED_REGISTER'
 ]
 
 
@@ -31,6 +35,11 @@ inst_mask = [
 '00000000000000000000011111111110', 
 #1
 '00000000000000000000010011111110', 
+#2
+'00000000000000000000011111111110', 
+#4
+'00000000000000000000010011111110', 
+
 ]
 
 
@@ -40,7 +49,11 @@ inst_identifier = [
 #0
 '00000000000000000000010011010000',
 #1
-'00000000000000000000000011010000' 
+'00000000000000000000000011010000' ,
+#3
+'00000000000000000000010011010100',
+#4
+'00000000000000000000000011010100' 
 ]
 
 def interpret(opcode):
@@ -51,8 +64,9 @@ def interpret(opcode):
 
 
 
-			if i == 0:
-				# ADD_EXTENDED_REGISTER
+			if instructions[i] == 'ADD_EXTENDED_REGISTER' or\
+				instructions[i] == 'ADDS_EXTENDED_REGISTER':
+				# ADD_EXTENDED_REGISTER || ADDS_EXTENDED_REGISTER
 				inst = instruction(opcode)
 				inst.opcode_br['sf'] = opcode[31]
 				opc_sf = opcode[31]
@@ -64,7 +78,7 @@ def interpret(opcode):
 
 				d = int( opc_Rd , base=2)
 				n = int( opc_Rn , base=2)
-				m = int( opc_Rn , base=2)
+				m = int( opc_Rm , base=2)
 				if opc_sf == '1':
 					# 64 bit execution
 					if(d == 31):
@@ -88,7 +102,7 @@ def interpret(opcode):
 						Rn = 'w' + str(n)
 
 
-				option = int(opc_option, base=2)
+				option = int(inst.opcode_br['option'], base=2)
 				if option %4 == 3:
 					Rm = 'x' + str(m)
 				else:
@@ -96,15 +110,21 @@ def interpret(opcode):
 				inst.opcode_br['Rm'] = Rm
 				inst.opcode_br['Rn'] = Rn
 				inst.opcode_br['Rd'] = Rd
+				extend_type = DecodeRegExtend(inst.opcode_br['option'])
+				extend_type = extend_type.split('_')[1]
 
-############## imcomplete
-
-				inst.disassembly = 'ADD {0}, {1}, {2}'.format(Rd, Rn, Rm)
-				inst.operation = ADD_EXTENDED_REGISTER_OP
+				if instructions[i] == 'ADD_EXTENDED_REGISTER':
+					inst.operation = ADD_EXTENDED_REGISTER_OP
+					inst.disassembly = 'ADD {0}, {1}, {2} {3} {4}'.format(Rd, Rn, Rm, ', ' + extend_type, int(inst.opcode_br['imm3'] , base=2 ))
+				elif instructions[i] == 'ADDS_EXTENDED_REGISTER':
+					inst.operation = ADDS_EXTENDED_REGISTER_OP
+					inst.disassembly = 'ADDS {0}, {1}, {2} {3} {4}'.format(Rd, Rn, Rm, ', ' + extend_type, int(inst.opcode_br['imm3'] , base=2 ))
 				return inst
 
-			elif i ==1:
-				# ADD_SHIFTED_REGISTER
+
+			elif instructions[i] == 'ADD_SHIFTED_REGISTER' or\
+				instructions[i] == 'ADDS_SHIFTED_REGISTER':
+				# ADD_SHIFTED_REGISTER || ADDS_SHIFTED_REGISTER
 				inst = instruction(opcode)
 				opc_Rd = opcode[0:5][::-1]
 				opc_Rn = opcode[5:10][::-1]
@@ -143,8 +163,14 @@ def interpret(opcode):
 				inst.opcode_br['Rd'] = Rd
 				inst.opcode_br['Rn'] = Rn
 				inst.opcode_br['Rm'] = Rm
-				inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
-				inst.operation = ADD_SHIFTED_REGISTER_OP
+
+				if instructions[i] == 'ADD_SHIFTED_REGISTER':
+					inst.operation = ADD_SHIFTED_REGISTER_OP
+					inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
+				elif instructions[i] == 'ADDS_SHIFTED_REGISTER':
+					inst.operation = ADDS_SHIFTED_REGISTER_OP
+					inst.disassembly = 'ADDS {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
+
 
 				return inst
 
@@ -153,13 +179,60 @@ def interpret(opcode):
 
 
 
-def ADD_EXTENDED_REGISTER_OP(instruction, context):
+def ADD_EXTENDED_REGISTER_OP(inst, context):
+	datasize   = 64 if inst.opcode_br['sf'] == '1' else 32;
+	extend_type = DecodeRegExtend(inst.opcode_br['option']);
+	shift = UInt(inst.opcode_br['imm3']);
+	if shift > 4 :
+		print "Shift amount cannot be greater than 4 : {0}".format(inst.disassembly)
+		exit()
+
+	#bits(datasize) result;
+	# both operands are 64 bit 
+	operand1 =bin( context.get_regval(inst.opcode_br['Rn']) )
+	operand1 = operand1[2:]
+	operand1 = ZeroExtend(operand1, 64)
+	#print "shift ", shift
+
+	operand2 = ExtendReg(inst.opcode_br['Rm'], extend_type, shift, context);
+	result, n,z,c,v = AddWithCarry(operand1, operand2, '0');
+	context.set_regval(inst.opcode_br['Rd'], result)
+
+
 	pc = context.get_regval('pc')
-	print "ADD_EXTENDED_REGISTER : Not implemented yet"
 	pc += 4
 	context.set_regval('pc', pc)
 			
 
+def ADDS_EXTENDED_REGISTER_OP(inst, context):
+	datasize   = 64 if inst.opcode_br['sf'] == '1' else 32;
+	extend_type = DecodeRegExtend(inst.opcode_br['option']);
+	shift = UInt(inst.opcode_br['imm3']);
+	if shift > 4 :
+		print "Shift amount cannot be greater than 4 : {0}".format(inst.disassembly)
+		exit()
+
+	#bits(datasize) result;
+	# both operands are 64 bit 
+	operand1 =bin( context.get_regval(inst.opcode_br['Rn']) )
+	operand1 = operand1[2:]
+	operand1 = ZeroExtend(operand1, 64)
+	#print "shift ", shift
+
+	operand2 = ExtendReg(inst.opcode_br['Rm'], extend_type, shift, context);
+	result, n,z,c,v = AddWithCarry(operand1, operand2, '0');
+	context.set_regval(inst.opcode_br['Rd'], result)
+	
+# setting the flags as it is adds instruction
+	context.flags['n'] = n
+	context.flags['z'] = z
+	context.flags['c'] = c
+	context.flags['v'] = v
+
+
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)
 
 def ADD_SHIFTED_REGISTER_OP(inst, context):
 	datasize = 64 if inst.opcode_br['sf']== '1' else 32
@@ -176,6 +249,31 @@ def ADD_SHIFTED_REGISTER_OP(inst, context):
 	reg_no = inst.opcode_br['Rd'][1:]
 	#print "result " , result, " reg no " , reg_no
 	context.set_regval('x' + reg_no, result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)
+
+
+def ADDS_SHIFTED_REGISTER_OP(inst, context):
+	datasize = 64 if inst.opcode_br['sf']== '1' else 32
+	sub_op = False
+	setflags = False
+	shift_type = DecodeShift(inst.opcode_br['shift'])
+	shift_amount = UInt(inst.opcode_br['imm6'])
+	operand1 = bin (context.get_regval(inst.opcode_br['Rn']))[2:]
+	operand1 = ZeroExtend(operand1, 64)
+	operand2 = ShiftReg(context.get_regval(inst.opcode_br['Rm']), shift_type, shift_amount)
+	result , n, z, c, v = AddWithCarry(operand1, operand2, '0')
+
+	# here we need to set the x register
+	reg_no = inst.opcode_br['Rd'][1:]
+	#print "result " , result, " reg no " , reg_no
+	context.set_regval('x' + reg_no, result)
+# setting the flags as it is adds instruction
+	context.flags['n'] = n
+	context.flags['z'] = z
+	context.flags['c'] = c
+	context.flags['v'] = v
 	pc = context.get_regval('pc')
 	pc += 4
 	context.set_regval('pc', pc)
