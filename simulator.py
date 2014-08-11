@@ -168,14 +168,14 @@ def run(elf_file , debug = False):
 		index = translator.translate(pc)
 
 #### default regsiter values 
-		context.set_regval('w1', 2)
+		context.set_regval('w1', 1)
 		context.set_regval('w2', 2)
 
 ###
 		inst = pipeline.fetch(index)
 		print inst.disassembly
 		inst.execute(context)
-		context.print_dec()
+		context.print_hex()
 
 	
 

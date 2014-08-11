@@ -64,10 +64,10 @@ class Context():
 		# We need to be careful when gen purpos(GP) register is accessed, 
 		# Also ensure that any new register added passes this if-else ladder check 
 		if reg_name[0] == 'w':
-			if value > pow(2, 32) -1:
-				print "register capacity exceeded. reg : {0} , capacity : {1}, value : {3}".format(reg_name, 
-					'32 bits' , value)
-				exit()
+			#if value > pow(2, 32) -1:
+			#	print "register capacity exceeded. reg : {0} , capacity : {1}, value : {2}".format(reg_name, 
+			#		'32 bits' , value)
+			#	exit()
 			self.val[self.regs.index(reg_name)] = value
 			return
 		elif reg_name[0] == 'x':

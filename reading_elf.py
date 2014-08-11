@@ -24,8 +24,8 @@ def main():
 		class_code = identify_class(inst_list[i])
 		if(i == -1):
 			cl = "Unidentified " 
-		elif class_code == 4:
-			inst_obj = data_processing_register.interpret(inst_list[i])
+		#elif class_code == 4:
+			#inst_obj = data_processing_register.interpret(inst_list[i])
 		cl = inst_class_code_mapping[class_code]
 		print i, " : " , inst_list[i], " Class : ", cl
 

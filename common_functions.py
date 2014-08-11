@@ -1,6 +1,3 @@
-
-				
-
 def UInt(x):
 	# x is N bit binary string with MSB at 0 index, with no 0b prefix.
 	result = 0
@@ -80,21 +77,6 @@ def ShiftReg(oprand, shift_type, shift_amount):
 			op = op[-1] + op[0:-2]
 		return op
 
-def SignExtend( x,  N):
-	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
-	# N is python integer
-	M = len(x)
-	#print "Value of x " , x
-	return Replicate(x[::-1][M-1], N-M) + x;
-
-def Replicate(b, N):
-	# b is 1 bit binary string with MSB at 0 index, with no 0b prefix.
-	# N is python integer
-	s = ""
-	for i in range(N):
-		s = b + s
-	return s
-	
 ExtendType = ['ExtendType_UXTB', 'ExtendType_UXTH', 'ExtendType_UXTW', 'ExtendType_UXTX', 'ExtendType_SXTB', 'ExtendType_SXTH', 'ExtendType_SXTW', 'ExtendType_SXTX']
 
 def DecodeRegExtend(op):
@@ -135,47 +117,14 @@ def Extend(x, N, unsigned):
 	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
 	# N is python integer
 	# unsigned is boolean
-	#print "In function extend " , x	
+	
 	return ZeroExtend(x, N) if unsigned else SignExtend(x, N);
-
-def ZeroExtend(x, N):
-	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
-	# N is python integer
-	M = len(x)
-	return Zeros(N-M)+x	
-	
-	
-def Ones(N):
-	return Replicate('1', N)
-	
-	
-def DecodeBitMasks(immN, imms, immr, immediate):
-	# immN is 1 bit binary string with MSB at 0 index, with no 0b prefix.
-	# imms is 6 bit binary string with MSB at 0 index, with no 0b prefix.	
-	# immr is 6 bit binary string with MSB at 0 index, with no 0b prefix.		
-	# immediate is boolean variable
-	len_ = HighestSetBit(immN+NOT(imms))
-	if len_ < 1:
-		print "HighestSetBit returned -1."
-		exit()
-	levels = ZeroExtend(Replicate('1', len_), 6)
-	
-	S = UInt(ZeroExtend( bin( int(imms, base = 2)&int(levels, base = 2) )[2:], 6))
-	R = UInt(ZeroExtend( bin( int(immr, base = 2)&int(levels, base = 2) )[2:], 6))
-	diff = ZeroExtend(bin(S-R)[2:], 6)
-	
-	esize = 1 << len_
-	d = UInt(diff)
-	welem = ZeroExtend(Ones(S + 1), esize)
-	telem = ZeroExtend(Ones(d + 1), esize)
-	wmask = Replicate(ROR(welem, R))
-	tmask = Replicate(telem)
-	return wmask, tmask
 
 def HighestSetBit(x):
 	# x is N bit binary string with MSB at 0 index, with no 0b prefix.
 	x = x[::-1]
-	for i in range(N-1, -1, step = -1):
+	N = len(x)
+	for i in range(N-1, -1,  -1):
 		if x[i] == '1':
 			return i;
 	return -1;
@@ -186,3 +135,71 @@ def HighestSetBit(x):
 #print int(ShiftReg(45, 'ShiftType_LSR', 3), base=2)
 #print int(ShiftReg(45, 'ShiftType_LSL', 3), base=2)
 #print int(ShiftReg(4, 'ShiftType_LSL', 3), base=2)
+
+LogicalOp = ['LogicalOp_AND', 'LogicalOp_EOR', 'LogicalOp_ORR']
+
+def Ones(N):
+	s = ""
+	for i in range(N):
+		s += '1'
+	return s
+
+def Replicate(b, N):
+	# b is N bit binary string with MSB at 0 index, with no 0b prefix.
+	# returns b bits replicated across N bit register.
+	b = int(b, base = 2)
+	b = bin(b)[2:]
+	l = len(b)
+	b = int(b, base = 2)
+	
+	j = 0
+	for i in range(N/l):
+		j = j | b
+		b = b << l
+			
+	return ZeroExtend(bin(j)[2:], N)
+
+def SignExtend( x,  N):
+	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
+	# N is python integer
+	M = len(x)
+	b = x[::-1][M-1]
+	for i in range(N-M):
+		x = b + x
+	return x;
+
+def ZeroExtend(x, N):
+	# x is M bit binary string with MSB at 0 index, with no 0b prefix.
+	# N is python integer
+	M = len(x)
+	return Zeros(N-M)+x	
+
+
+def DecodeBitMasks(immN, imms, immr, immediate, datasize):
+	# immN is 1 bit binary string with MSB at 0 index, with no 0b prefix.
+	# imms is 6 bit binary string with MSB at 0 index, with no 0b prefix.	
+	# immr is 6 bit binary string with MSB at 0 index, with no 0b prefix.		
+	# immediate is boolean variable
+	len_ = HighestSetBit(immN+NOT(imms))
+	if len_ < 1:
+		print "HighestSetBit returned -1."
+		exit()
+	levels = ZeroExtend(Ones(len_), 6)
+	
+	S = UInt(ZeroExtend( bin( int(imms, base = 2)&int(levels, base = 2) )[2:], 6))
+	R = UInt(ZeroExtend( bin( int(immr, base = 2)&int(levels, base = 2) )[2:], 6))
+	diff = ZeroExtend(bin(S-R)[2:], 6)
+	
+	esize = 1 << len_
+	d = UInt(diff)
+	welem = ZeroExtend(Ones(S + 1), esize)
+	telem = ZeroExtend(Ones(d + 1), esize)
+	wmask = Replicate(ROR(welem, R), datasize)
+	tmask = Replicate(telem, datasize)
+	return wmask, tmask
+
+
+def ROR(op, amount):
+	for i in range(amount):
+		op =op[-1] +  op[0:-1] 
+	return op
