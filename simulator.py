@@ -56,8 +56,6 @@ def check_if_elf_file(file_name):
 		return False
 	
 def run(elf_file , debug = False):
-	if debug : 
-		print "Debuggin mode " 
 	global memory
 	global _start
 	global _text_len
@@ -166,15 +164,14 @@ def run(elf_file , debug = False):
 	while True:
 		pc = context.get_regval('pc')
 		index = translator.translate(pc)
-
-#### default regsiter values 
-		context.set_regval('w1', 1)
-		context.set_regval('w2', 2)
-
-###
+		if index == -1:
+			break 
 		inst = pipeline.fetch(index)
-		print inst.disassembly
 		inst.execute(context)
+		if debug : 
+			print inst.disassembly
+
+	if debug:
 		context.print_hex()
 
 	

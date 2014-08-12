@@ -27,7 +27,15 @@ instructions = [
 #6
 'ADR',
 #7
-'ASR_IMMEDIATE'
+'ASR_IMMEDIATE',
+#8
+'MOV_SP',
+#9
+'MOV_inverted_wide_immediate',
+#10
+'MOV_wide_immediate', 
+#11
+'MOV_BITMASK_IMMEDIATE',
 ]
 
 
@@ -50,6 +58,14 @@ inst_mask = [
 '00000000000000000000000011111001',
 #7
 '00000000000000000000000111111110' ,
+#8
+'00000000000000000000000011111110',
+#9
+'00000000000000000000000111111110',
+#10
+'00000000000000000000000111111110',
+#11
+'00000000000000000000000111111110',
 ]
 
 
@@ -71,7 +87,15 @@ inst_identifier = [
 #6
 '00000000000000000000000000001000',
 #7
-'00000000000000000000000011001000'
+'00000000000000000000000011001000',
+#8
+'00000000000000000000000010001000',
+#9
+'00000000000000000000000101001000',
+#10
+'00000000000000000000000101001010',
+#11
+'00000000000000000000000001001100',
 ]
 
 def interpret(opcode):
@@ -133,19 +157,19 @@ def interpret(opcode):
 				shift = hex(inst.opcode_br['shift'])
 				if instructions[i] == 'ADD_IMMEDIATE':
 					inst.disassembly = "ADD ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",int(shift, base=2),">}"
+					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
 					inst.operation = ADD_IMMEDIATE_OP;
 				elif instructions[i] == 'ADDS_IMMEDIATE' :
 					inst.disassembly = "ADDS ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",int(shift, base=2),">}"
+					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
 					inst.operation = ADDS_IMMEDIATE_OP;
 				elif instructions[i] == 'SUB_IMMEDIATE':
 					inst.disassembly = "SUB ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",int(shift, base=2),">}"
+					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
 					inst.operation = SUB_IMMEDIATE_OP;
 				elif instructions[i] == 'SUBS_IMMEDIATE' :
 					inst.disassembly = "SUBS ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",int(shift, base=2),">}"
+					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
 					inst.operation = SUBS_IMMEDIATE_OP;
 
 
@@ -243,7 +267,71 @@ def interpret(opcode):
 				
 				inst.operation = ASR_IMMEDIATE
 				return inst		
-
+			
+			elif instructions[i] == 'MOV_SP':
+				inst = instruction(opcode)
+				inst.opcode_br['sf'] = opcode[31]
+				inst.opcode_br['op'] = opcode[30]
+				inst.opcode_br['S'] = opcode[29]
+				inst.opcode_br['shift'] = opcode[22:24][::-1]
+				inst.opcode_br['imm12'] = opcode[10:22][::-1]
+				inst.opcode_br['Rn'] = opcode[5:10][::-1]
+				inst.opcode_br['Rd'] = opcode[0:5][::-1]
+				
+				if inst.opcode_br['sf'] == '0':
+					rd = int(inst.opcode_br['Rd'], base = 2)
+					Rd = 'w'+str(rd) if rd < 31 else 'wsp'
+					rn = int(inst.opcode_br['Rn'], base = 2)
+					Rn = 'w'+str(rn) if rn < 31 else 'wsp'
+				else:
+					rd = int(inst.opcode_br['Rd'], base = 2)
+					Rd = 'x'+str(rd) if rd < 31 else 'sp'
+					rn = int(inst.opcode_br['Rn'], base = 2)
+					Rn = 'x'+str(rn) if rn < 31 else 'sp'
+				
+				inst.opcode_br['Rn'] = Rn
+				inst.opcode_br['Rd'] = Rd
+				inst.disassembly = 'MOV {0}, {1}'.format(Rd, Rn)
+				inst.operation = MOV_SP
+				return inst		
+			
+			elif instructions[i] == 'MOV_inverted_wide_immediate' or\
+				instructions[i] == 'MOV_wide_immediate':
+				
+				inst = instruction(opcode)
+				inst.opcode_br['sf'] = opcode[31]
+				inst.opcode_br['opc'] = opcode[29:31][::-1]
+				inst.opcode_br['hw'] = opcode[21:23][::-1]
+				inst.opcode_br['imm16'] = opcode[5:21][::-1]
+				inst.opcode_br['Rd'] = opcode[0:5][::-1]
+				
+				if inst.opcode_br['sf'] == '0':
+					rd = int(inst.opcode_br['Rd'], base = 2)
+					Rd = 'w'+str(rd)
+				else:
+					rd = int(inst.opcode_br['Rd'], base = 2)
+					Rd = 'x'+str(rd)
+				imm = hex(int(inst.opcode_br['hw']+ inst.opcode_br['imm16'], base=2))
+				inst.disassembly = 'MOV {0}, {1}'.format(Rd, imm)
+				inst.operation = MOV_inverted_wide_immediate
+				return inst
+			elif instructions[i] == 'MOV_BITMASK_IMMEDIATE':
+				if opcode[31] == '1':
+					Rd = 'x' + str(int(opcode[0:5][::-1], base=2))
+				else:
+					Rd = 'w' + str(int(opcode[0:5][::-1], base=2))
+				immr = opcode[16:22][::-1]
+				imms = opcode[10:16][::-1]
+				N = opcode[22]
+				
+				imm =N + imms + immr 
+				inst = instruction(opcode)
+				print "immediate value " , imm
+				inst.disassembly = "MOV {0} # {1}".format(Rd, int(imm, base=2))
+				inst.operation = MOV_BITMASK_IMMEDIATE_OP
+				return inst
+			
+			
 	print "Unindentified instruction"
 
 def ADD_IMMEDIATE_OP(inst, context):
@@ -406,3 +494,63 @@ def ASR_IMMEDIATE(inst, context):
 	pc = context.get_regval('pc')
 	pc += 4
 	context.set_regval('pc', pc)		
+
+def MOV_SP(inst, context):
+	AND_IMMEDIATE(inst, context)
+
+def MOV_inverted_wide_immediate(inst, context):
+	d = UInt(inst.opcode_br['Rd'])
+	datasize = 64 if inst.opcode_br['sf'] == '1' else 32
+	imm = inst.opcode_br['imm16']
+	pos = -1
+	opcode = -1
+	
+	if inst.opcode_br['opc'] == '00':
+		opcode = 'MoveWideOp_N'
+	elif inst.opcode_br['opc'] == '10':
+		opcode = 'MoveWideOp_Z'
+	elif inst.opcode_br['opc'] == '11':	
+		opcode = 'MoveWideOp_K'
+		
+	pos = UInt(inst.opcode_br['hw']+'0000')
+	
+	result = Zeros(datasize)
+	
+	if opcode == 'MoveWideOp_K':
+		result = ZeroExtend(bin(context.get_regval('x'+str(d)))[2:], 64)
+	
+	result = result[::-1]
+	result = result[0:pos] + imm[::-1] + result[pos+16:]
+	result = result[::-1]
+	
+	if opcode == 'MoveWideOp_N':
+		result = NOT(result)
+	
+	context.set_regval('x'+str(d), int(result, base = 2))
+	
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)		
+
+def MOV_BITMASK_IMMEDIATE_OP(inst , context):
+	opcode = inst.opcode
+	d = int(opcode[0:5][::-1] , base=2)
+	n = int(opcode[5:10][::-1] , base=2)
+	datasize = 64 if opcode[31] == '1' else 32 
+	N = opcode[22]
+	imms = opcode[10:16][::-1]
+	immr = opcode[16:22][::-1]
+	imm = DecodeBitMasks(N , imms, immr, True, datasize)
+	print "val of n " , n
+	operand1 = context.get_regval('x' + str(n))
+	operand2 = int(imm, base=2)
+
+	result = operand1 | operand2
+	if d == 31:
+		context.set_regval('sp', result)
+	else:
+		context.set_regval('x' + str(d) , result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)		
+	

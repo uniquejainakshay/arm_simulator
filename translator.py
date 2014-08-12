@@ -7,6 +7,9 @@ class Translator():
 	
 	#returns the index of the instruction in the pipeline from the PC value
 	def translate(self, pc_value):
+		if pc_value == 4 + max(self.mapping.keys()):
+			print "Execution Successful " 
+			return -1
 		if not pc_value in self.mapping:
 			print "Error: Translation of address \"{0}\" failed.\
 			No mapping for interpreted instruction found.".format(pc_value)

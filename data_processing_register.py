@@ -39,6 +39,8 @@ instructions = [
 'ANDS_SHIFTED_REGISTER',
 #10
 'ASR_REGISTER',
+#11
+'MOV_register',
 ]
 
 
@@ -67,6 +69,8 @@ inst_mask = [
 '00000000000000000000010011111110', 
 #10
 '00000000001111110000011111111110', 
+#11
+'00000000000000000000010011111110',
 
 ]
 
@@ -96,6 +100,8 @@ inst_identifier = [
 '00000000000000000000000001010110' ,
 #10
 '00000000000101000000001101011000', 
+#11
+'00000000000000000000000001010100'
 ]
 
 def interpret(opcode):
@@ -276,6 +282,32 @@ def interpret(opcode):
 
 				inst.operation = ASR_REGISTER_OP
 
+				return inst
+			elif instructions[i] == 'MOV_register':
+				inst = instruction(opcode)
+				inst.opcode_br['sf'] = opcode[31]
+				inst.opcode_br['Rm'] = opcode[16:21][::-1]
+				inst.opcode_br['Rd'] = opcode[0:5][::-1]
+				
+				Rm = int(inst.opcode_br['Rm'], base = 2)
+				Rd = int(inst.opcode_br['Rd'], base = 2)
+				
+				if inst.opcode_br['sf'] == '0':
+					rd = int(inst.opcode_br['Rd'], base = 2)
+					Rd = 'w'+str(rd)
+					rm = int(inst.opcode_br['Rm'], base = 2)
+					Rm = 'w'+str(rm)
+				else:
+					rd = int(inst.opcode_br['Rd'], base = 2)
+					Rd = 'x'+str(rd)
+					rm = int(inst.opcode_br['Rm'], base = 2)
+					Rm = 'x'+str(rm)
+				
+				inst.opcode_br['Rm'] = Rm
+				inst.opcode_br['Rd'] = Rd
+				
+				inst.disassembly = 'MOV {0}, {1}'.format(Rd, Rm)
+				inst.operation = MOV_register
 				return inst
 			else:
 				print "Unidentified"
@@ -529,3 +561,8 @@ def ASR_REGISTER_OP(inst, context):
 	context.set_regval('pc', pc)
 
 
+def MOV_register(inst, context):	
+	context.set_regval( inst.opcode_br['Rd'],context.get_regval(inst.opcode_br['Rm']))
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)		

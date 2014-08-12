@@ -65,9 +65,7 @@ def ShiftReg(oprand, shift_type, shift_amount):
 		op = ZeroExtend(op, 64)
 		return op
 	elif shift_type == 'ShiftType_ASR':
-		#print oprand
 		oprand = bin(oprand)[2:]
-		#print oprand
 		extended_x = SignExtend(oprand, shift_amount  +64);
 		#print extended_x
 		result = extended_x[0:-shift_amount]
@@ -141,6 +139,8 @@ def HighestSetBit(x):
 #print int(ShiftReg(4, 'ShiftType_LSL', 3), base=2)
 
 LogicalOp = ['LogicalOp_AND', 'LogicalOp_EOR', 'LogicalOp_ORR']
+MoveWideOp = ['MoveWideOp_N', 'MoveWideOp_Z', 'MoveWideOp_K']
+
 
 def Ones(N):
 	s = ""
