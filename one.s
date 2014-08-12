@@ -3,4 +3,4 @@
 
 _start:
 
-asr x3, x2, #1
+asr w1, w2, w3

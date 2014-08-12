@@ -37,6 +37,8 @@ instructions = [
 'AND_SHIFTED_REGISTER',
 #9
 'ANDS_SHIFTED_REGISTER',
+#10
+'ASR_REGISTER',
 ]
 
 
@@ -63,6 +65,8 @@ inst_mask = [
 '00000000000000000000010011111110', 
 #9
 '00000000000000000000010011111110', 
+#10
+'00000000001111110000011111111110', 
 
 ]
 
@@ -90,6 +94,8 @@ inst_identifier = [
 '00000000000000000000000001010000' ,
 #9 
 '00000000000000000000000001010110' ,
+#10
+'00000000000101000000001101011000', 
 ]
 
 def interpret(opcode):
@@ -255,7 +261,22 @@ def interpret(opcode):
 
 				inst.operation = AND_SHIFTED_REGISTER_OP
 				return inst
+			elif instructions[i] == 'ASR_REGISTER':
 
+				d = int(opcode[0:5][::-1], base=2)
+				n = int(opcode[5:10][::-1], base=2)
+				m = int(opcode[16:21][::-1], base=2)
+
+
+				inst = instruction(opcode)
+				if opcode[31] == '1':
+					inst.disassembly = "ASRV {0}, {1}, {2}".format('x' + str(d), 'x' + str(n) , 'x' + str(n))
+				else:
+					inst.disassembly = 'ASRV {0}, {1}, {2}'.format('w' + str(d), 'w' + str(n) , 'w' + str(n))
+
+				inst.operation = ASR_REGISTER_OP
+
+				return inst
 			else:
 				print "Unidentified"
 
@@ -490,4 +511,21 @@ def AND_SHIFTED_REGISTER_OP(inst, context):
 	pc = context.get_regval('pc')
 	pc += 4
 	context.set_regval('pc', pc)
+def ASR_REGISTER_OP(inst, context):
+	d = int(inst.opcode[0:5][::-1], base=2)
+	n = int(inst.opcode[5:10][::-1], base=2)
+	m = int(inst.opcode[16:21][::-1], base=2)
+	datasize = 64 if inst.opcode[31] == '1' else 32;
+	op2 = inst.opcode[10:12][::-1]
+	shift_type = DecodeShift(op2);
+
+	operand2 = context.get_regval('x' + str(m))
+	operand2 %= datasize
+	result = ShiftReg(context.get_regval('x' + str(n)), shift_type, operand2)
+	result = int(result, base=2)
+	context.set_regval('x' + str(d), result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)
+
 

@@ -65,10 +65,14 @@ def ShiftReg(oprand, shift_type, shift_amount):
 		op = ZeroExtend(op, 64)
 		return op
 	elif shift_type == 'ShiftType_ASR':
+		#print oprand
 		oprand = bin(oprand)[2:]
+		#print oprand
 		extended_x = SignExtend(oprand, shift_amount  +64);
 		#print extended_x
 		result = extended_x[0:-shift_amount]
+		if shift_amount == 0 :
+			return extended_x
 		return result
 	else:
 		op = bin(oprand)[2:]
