@@ -15,7 +15,7 @@ def SInt(x):
 		if x[i] == '1':
 			result = result + pow(2,i)
 	if x[len(x)-1] == '1':
-		result = result - pow(2,len(x)-1);
+		result = result - pow(2,len(x));
 	return result;
 
 def AddWithCarry(x, y, carry_in):
@@ -26,7 +26,9 @@ def AddWithCarry(x, y, carry_in):
 	N = len(x)
 	unsigned_sum = UInt(x) + UInt(y) + UInt(carry_in);
 	signed_sum = SInt(x) + SInt(y) + UInt(carry_in);
+	
 	result = int(bin(unsigned_sum)[2:][::-1][0:N][::-1], base = 2)
+	
 	n = ZeroExtend(bin(result)[2:], N)[::-1][N-1]
 	z = '1' if result == 0 else '0'
 	c = '0' if UInt(bin(result)[2:]) == unsigned_sum else '1';
@@ -207,3 +209,49 @@ def ROR(op, amount):
 	for i in range(amount):
 		op =op[-1] +  op[0:-1] 
 	return op
+
+def ConditionHolds(condition, context):	
+	# condition is 3 bit binary string with MSB at 0 index, with no 0b prefix.
+	result = bool()
+	tcondition = str(condition)
+	condition = condition[::-1][1:4]
+	if condition == '000':
+		result = context.flags['z'] == '1'
+	elif condition == '001':
+		result = context.flags['c'] == '1'
+	elif condition == '010':
+		result = context.flags['n'] == '1'
+	elif condition == '011':
+		result = context.flags['v'] == '1'
+	elif condition == '100':
+		result = (context.flags['c'] == '1' and context.flags['z'] == '0')
+	elif condition == '101':
+		result = (context.flags['n'] == context.flags['v'])
+	elif condition == '110':
+		result = ((context.flags['n'] == context.flags['v']) and context.flags['z'] == '0')
+	else:
+		result = True
+	
+	condition = tcondition
+	
+	if condition[::-1][0] == '1' and condition != '1111':
+		result = not(result)
+	
+	return result
+def twos_comp_64(no):
+	if no == 0:
+		return Zeros(64)
+	if no > 0:
+		no = bin(no)[2:]
+		return ZeroExtend(no, 64)
+	if no < 0:
+		return bin(0xffffffffffffffff & no)[2:]
+
+def twos_comp_32(no):
+	if no == 0:
+		return Zeros(32)
+	if no > 0:
+		no = bin(no)[2:]
+		return ZeroExtend(no, 32)
+	if no < 0:
+		return bin(0xffffffff & no)[2:]		

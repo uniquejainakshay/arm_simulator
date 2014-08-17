@@ -10,6 +10,7 @@ import data_processing_immediate
 import data_processing_register
 import load_store_instructions
 from registers import Context
+from debug import *
 
 ######			Globals Section
 
@@ -54,7 +55,25 @@ def check_if_elf_file(file_name):
 	except ELFError:
 		f.close()
 		return False
-	
+
+# When in debug mode
+#	1. Load the the elf file and wait
+#	2. Implement following commands
+#		break <line_no>
+#		watch <reg_name>
+#		list
+#		run
+#		del
+#		help ( show help for all the commands supported ) 
+#		print <x/d> reg  ( print individual registers in decimal or hex) 
+#		print <no><b/w/d> <x/d> <mem_location>
+
+#	Need to maintain a list for the break points indices in sorted order. Translator must raise an exception when the breakpointed instruction is being translated.
+
+# registers module will maintain the list of watched registers 
+
+
+
 def run(elf_file , debug = False):
 	global memory
 	global _start
@@ -155,24 +174,177 @@ def run(elf_file , debug = False):
 
 
 	# set the PC to _start location and begin execution ( make provisions for debug )
-	context.set_regval('sp', stack_start)
-	context.set_regval('pc', _start)
 
-	
-	##  Start the execution of the instructions from _start
-
+		context.set_regval('sp', stack_start)
+		context.set_regval('pc', _start)
 	while True:
-		pc = context.get_regval('pc')
-		index = translator.translate(pc)
-		if index == -1:
-			break 
-		inst = pipeline.fetch(index)
-		inst.execute(context)
-		if debug : 
-			print inst.disassembly
 
-	if debug:
-		context.print_hex()
+		
+		##  Start the execution of the instructions from _start
+#		break <line_no>
+#		watch <reg_name>
+#		list
+#		run
+#		del
+#		help ( show help for all the commands supported ) 
+		if debug:
+			print "(debug)",
+			cmd = read_and_parse_debug_command()
+			if cmd[0] == 'help':
+				print "break <line_no>"
+				print "list"
+				print "run"
+				print "del <line_no> "
+				print "help "
+				print "print <x/d> reg "
+				print "print <no><b/w/d> <x/d> <mem_location>"
+				print "quit"
+				
+				continue
+			elif cmd[0] == 'break':
+				try: 
+					line_no = int(cmd[1])
+					print translator.mapping.values()
+					if line_no not in translator.mapping.values():
+						print "Invalid line number. Use list command to get proper line no."
+						continue
+					if line_no not in translator.break_points:
+						translator.break_points += [line_no]
+					msg = "Break points at lines: "
+					for i in translator.break_points:
+						msg += str(i) + ', '
+					print msg[:-1]
+				except Exception as exp: 
+					print "Error parsing the line number " 
+				continue
+			elif cmd[0] == 'list':
+				count  = 0
+				for i in pipeline.inst_list:
+					print count , ':\t',i.get_opcode_hex(), i.disassembly
+					count += 1
+				continue
+
+			elif cmd[0] == 'run':
+				pc = context.get_regval('pc')
+				if pc not in translator.mapping.keys():
+					print "Restarting execution from _start ", pc
+					context.set_regval('pc', _start)
+				elif pc == _start:
+					print "Starting execution ", pc
+				else:
+					print "Continuting the execution ", pc
+			elif cmd[0] == 'del':
+				try: 
+					line_no = int(cmd[1])
+					if line_no not in translator.mapping.values():
+						print "Invalid line number. Use list command to get proper line no."
+						continue
+					translator.break_points.remove(line_no)
+					msg = "Break points at : "
+					for i in translator.break_points:
+						msg += str(i) + ', '
+					print msg[:-2]
+				except Exception as exp: 
+					print "Error parsing the line number " 
+				continue
+			elif cmd[0] == 'print':
+				if len(cmd) < 3:
+					print "Too few arguments for print command"
+					continue
+				if not (cmd[1] == 'x' or cmd[1] == 'd'):
+					if not (cmd[1][-1] == 'b' or cmd[1][-1] == 'w'or cmd[1][-1] == 'd'):
+						print "Invalid 2nd argument for print command "
+						continue
+					else:
+						if len(cmd) < 4:
+							print "Too few arugments for printing memory "
+							continue
+						print_memory(cmd)
+						continue
+				else:
+					if len(cmd) < 3 :
+						print "Too few arguments for print command "
+						continue
+					if cmd[1] == 'x':
+						print cmd[2] , " : " , hex(context.get_regval(cmd[2]))
+					else:
+						print cmd[2] , " : " , context.get_regval(cmd[2])
+					continue
+			elif cmd[0] == 'quit':
+				exit()	
+			else:
+				print "Unrecognised command. Try help."
+				continue
+
+				
+		while True:
+			try:
+				pc = context.get_regval('pc')
+				# change translator code
+				index= translator.translate(pc)
+				if index == -1:
+					break 
+				inst = pipeline.fetch(index)
+				inst.execute(context)
+			except break_point_exception as e:
+				# debug level code 
+				print "Break point at : "
+				index = e.inst_index
+				inst = pipeline.fetch(index)
+				print index , ':\t',inst.get_opcode_hex(), inst.disassembly
+				inst.execute(context)
+				break
+			except text_end_exception as e:
+				print "Program exited"
+				break
+
+
+		if not debug :
+			break
+
+def read_and_parse_debug_command():
+	cmd  = raw_input()
+	cmd = cmd.split(' ')
+	while '' in cmd:
+		cmd.remove('')
+	return cmd
+
+
+#		print <no><b/w/d> <x/d> <mem_location>
+def print_memory(cmd):
+	no = int(cmd[1][:-1])
+	size = str(cmd[1])[-1]
+	base = cmd[2]
+	location = int(cmd[3])
+	print "Memory contents"
+	try:
+		for i in range(no):
+			if base == 'x':
+				if size == 'b':
+					print location,': ' , memory[location].encode('hex')
+					location += 1
+				elif size == 'w':
+					print location,': ', memory[location].encode('hex'), ' ' , memory[location +1].encode('hex')
+					location += 2
+				elif size == 'd':
+					print location,': ',  memory[location].encode('hex'), ' ' , memory[location +1].encode('hex'), ' ' , memory[location + 2].encode('hex'), ' ' , memory[location + 3].encode('hex')
+					location += 4
+			elif base == 'd':
+				if size == 'b':
+					print location,': ' , int(memory[location].encode('hex'), base=16)
+					location += 1
+				elif size == 'w':
+					print location,': ', int(memory[location].encode('hex'), base=16), ' ' , int(memory[location +1].encode('hex'), base=16)
+					location += 2
+				elif size == 'd':
+					print location,': ',  int(memory[location].encode('hex'), base=16), ' ' , int(memory[location +1].encode('hex'), base=16), ' ' , int(memory[location + 2].encode('hex'), base=16), ' ' , int(memory[location + 3].encode('hex'), base=16)
+					location += 4
+				
+
+	except KeyError:
+		print "Invalid memory location accessed : ", location
+
+
 
 	
 

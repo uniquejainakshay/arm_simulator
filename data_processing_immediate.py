@@ -376,7 +376,7 @@ def SUB_IMMEDIATE_OP(inst, context):
 def SUBS_IMMEDIATE_OP(inst, context):
 	operand2 = inst.opcode_br['imm']
 	operand1 = ZeroExtend(bin(context.get_regval(inst.opcode_br['Rn']))[2:], len(operand2))
-
+	
 	operand2 = NOT(operand2)
 	result, n, z, c, v = AddWithCarry(operand1, operand2, '1')
 	context.set_regval(inst.opcode_br['Rd'], result)

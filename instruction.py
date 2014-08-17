@@ -34,3 +34,7 @@ class instruction():
 	# Execute the instruction 
 	def execute(self, context):
 		self.operation(self, context)
+
+	def get_opcode_hex(self):
+		opcode = self.opcode[::-1]
+		return hex(int(opcode, base=2))

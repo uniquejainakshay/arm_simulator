@@ -222,7 +222,10 @@ def interpret(opcode):
 
 				if instructions[i] == 'ADD_SHIFTED_REGISTER':
 					inst.operation = ADD_SHIFTED_REGISTER_OP
-					inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
+					if opc_sf == '1':
+						inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format('x' + str(d), Rn, Rm, shift, amount)
+					else:
+						inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format('w' + str(d), Rn, Rm, shift, amount)
 				elif instructions[i] == 'ADDS_SHIFTED_REGISTER':
 					inst.operation = ADDS_SHIFTED_REGISTER_OP
 					inst.disassembly = 'ADDS {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
@@ -379,7 +382,10 @@ def ADD_SHIFTED_REGISTER_OP(inst, context):
 	setflags = False
 	shift_type = DecodeShift(inst.opcode_br['shift'])
 	shift_amount = UInt(inst.opcode_br['imm6'])
-	operand1 = bin (context.get_regval(inst.opcode_br['Rn']))[2:]
+	operand1 = context.get_regval(inst.opcode_br['Rn'])
+	if operand1 < 0:
+		operand1 = twos_comp_64(operand1)
+	operand1 = bin (operand1)[2:]
 	operand1 = ZeroExtend(operand1, 64)
 	operand2 = ShiftReg(context.get_regval(inst.opcode_br['Rm']), shift_type, shift_amount)
 	result , n, z, c, v = AddWithCarry(operand1, operand2, '0')
@@ -396,12 +402,27 @@ def ADD_SHIFTED_REGISTER_OP(inst, context):
 def ADDS_SHIFTED_REGISTER_OP(inst, context):
 	datasize = 64 if inst.opcode_br['sf']== '1' else 32
 	sub_op = False
-	setflags = False
+	setflags = True
 	shift_type = DecodeShift(inst.opcode_br['shift'])
 	shift_amount = UInt(inst.opcode_br['imm6'])
-	operand1 = bin (context.get_regval(inst.opcode_br['Rn']))[2:]
-	operand1 = ZeroExtend(operand1, 64)
+
+	operand1 = context.get_regval(inst.opcode_br['Rn'])
+	if UInt(bin(operand1)[2:]) != SInt(bin(operand1)[2:]):
+		operand1 = SInt(bin(operand1)[2:])
+		if datasize == 64:
+			operand1 = twos_comp_64(operand1)
+		else:
+			operand1 = twos_comp_32(operand1)
+			operand1 = SignExtend(operand1, 64)
+			
+	else:	
+		operand1 = ZeroExtend(bin(operand1)[2:], 64)
+	
 	operand2 = ShiftReg(context.get_regval(inst.opcode_br['Rm']), shift_type, shift_amount)
+	if datasize == 32:
+		operand2 = operand2[::-1][0:32][::-1]
+		operand2 = SignExtend(operand2, 64)
+	
 	result , n, z, c, v = AddWithCarry(operand1, operand2, '0')
 
 	# here we need to set the x register

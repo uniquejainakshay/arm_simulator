@@ -5,6 +5,7 @@
 # General purpose registers 64bit registers x0 to x31 
 # Registers PC SP
 
+from common_functions import *
 
 class Context():
 	def __init__(self):
@@ -22,7 +23,7 @@ class Context():
 		0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 ,
 		0 , 0 , 0 , 0 , 0 , 0, 0, 0]
 
-		self.flags = {'n':0 , 'z':0 , 'c':0, 'v':0}
+		self.flags = {'n':0 , 'z':0 , 'c':0, 'v':0, 'el':'00'}
 	
 	#returns the content of the register, specified in the argument 	
 	def get_regval(self, reg_name):
@@ -42,6 +43,7 @@ class Context():
 			reg_no = reg_name[1:]
 			lower_32_val = self.val[self.regs.index('w' + reg_no)]
 			higher_32_val  = self.val[self.regs.index(reg_name)]
+			#print "while getting regval " , reg_name, hex(lower_32_val) , hex(higher_32_val )
 			final_val = higher_32_val * pow(2, 32) + lower_32_val
 			return final_val
 		elif reg_name == 'sp':
@@ -60,28 +62,18 @@ class Context():
 		if not reg_name in self.regs:
 			print "Undefined register modification tried : " , reg_name
 			exit()
-
+		if value < 0:
+			# store in 2's complement form 
+			value = 0xffffffffffffffff & value
 		# We need to be careful when gen purpos(GP) register is accessed, 
 		# Also ensure that any new register added passes this if-else ladder check 
-		if reg_name[0] == 'w':
-			#if value > pow(2, 32) -1:
-			#	print "register capacity exceeded. reg : {0} , capacity : {1}, value : {2}".format(reg_name, 
-			#		'32 bits' , value)
-			#	exit()
-			self.val[self.regs.index(reg_name)] = value
-			return
-		elif reg_name[0] == 'x':
-			#user intends to use GP register in 64 bit width size
-			if value > pow(2, 64) -1:
-				print "register capacity exceeded. reg : {0} , capacity : {1}, value : {3}".format(reg_name, 
-				'64 bits' , value)
-				exit()
-
+		if reg_name[0] == 'w' or reg_name[0] == 'x':
 			reg_no = reg_name[1:]
 			lower_32_val = value % pow(2,  32)
 			higher_32_val  = value / pow(2, 32)
+			#print "lower and higher values while setting register : " , reg_name, hex(lower_32_val) , hex(higher_32_val )
 			# setting the values 
-			self.val[self.regs.index(reg_name)] = higher_32_val
+			self.val[self.regs.index('x' + reg_no)] = higher_32_val
 			self.val[self.regs.index('w'+reg_no)] = lower_32_val
 			return
 
@@ -133,7 +125,7 @@ class Context():
 			for i in range(lb, ub):
 				reg = self.regs[i]
 				value = self.get_regval(reg)
-				print hex(value)[2:], "\t\t", 
+				print hex(value), "\t\t", 
 					#print hex(self.get_reg(self.regs[i]))[2:], "\t\t", 
 					#print "this is str : " , i
 			print '\n'
