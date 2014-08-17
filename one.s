@@ -2,10 +2,6 @@
 
 
 _start:
-adds x3, x3, _start
-adds x2, x2, #10
-cbz x3, S
-adds x2, x2, #-100
-S:
-adds x2, x2, #-1
-b.pl S
+	mov w1, 0xffff
+	mov w2, 5
+	lsr w3, w1, w2

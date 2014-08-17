@@ -6,6 +6,7 @@
 # Registers PC SP
 
 from common_functions import *
+from debug import *
 
 class Context():
 	def __init__(self):
@@ -67,7 +68,7 @@ class Context():
 			value = 0xffffffffffffffff & value
 		# We need to be careful when gen purpos(GP) register is accessed, 
 		# Also ensure that any new register added passes this if-else ladder check 
-		if reg_name[0] == 'w' or reg_name[0] == 'x':
+		if (reg_name[0] == 'w' or reg_name[0] == 'x') and ( not reg_name == 'wsp'):
 			reg_no = reg_name[1:]
 			lower_32_val = value % pow(2,  32)
 			higher_32_val  = value / pow(2, 32)

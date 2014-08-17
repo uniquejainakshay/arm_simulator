@@ -60,7 +60,6 @@ def check_if_elf_file(file_name):
 #	1. Load the the elf file and wait
 #	2. Implement following commands
 #		break <line_no>
-#		watch <reg_name>
 #		list
 #		run
 #		del
@@ -197,14 +196,15 @@ def run(elf_file , debug = False):
 				print "del <line_no> "
 				print "help "
 				print "print <x/d> reg "
-				print "print <no><b/w/d> <x/d> <mem_location>"
+				print 's'
+				print 'c'
 				print "quit"
 				
 				continue
 			elif cmd[0] == 'break':
 				try: 
 					line_no = int(cmd[1])
-					print translator.mapping.values()
+				#	print translator.mapping.values()
 					if line_no not in translator.mapping.values():
 						print "Invalid line number. Use list command to get proper line no."
 						continue
@@ -227,12 +227,13 @@ def run(elf_file , debug = False):
 			elif cmd[0] == 'run':
 				pc = context.get_regval('pc')
 				if pc not in translator.mapping.keys():
-					print "Restarting execution from _start ", pc
 					context.set_regval('pc', _start)
+					print "Restarting execution from _start  =", _start
 				elif pc == _start:
-					print "Starting execution ", pc
+					print "Starting execution from memory location ", _start
 				else:
-					print "Continuting the execution ", pc
+					print "Program already running. Press c to continue execution."
+					continue
 			elif cmd[0] == 'del':
 				try: 
 					line_no = int(cmd[1])
@@ -248,6 +249,9 @@ def run(elf_file , debug = False):
 					print "Error parsing the line number " 
 				continue
 			elif cmd[0] == 'print':
+				if cmd[1] == 'all':
+					context.print_hex()
+					continue
 				if len(cmd) < 3:
 					print "Too few arguments for print command"
 					continue
@@ -271,7 +275,28 @@ def run(elf_file , debug = False):
 						print cmd[2] , " : " , context.get_regval(cmd[2])
 					continue
 			elif cmd[0] == 'quit':
-				exit()	
+				exit()
+		
+			elif cmd[0] == 's':
+				try:
+					pc = context.get_regval('pc')
+					index= translator.translate(pc)
+					inst = pipeline.fetch(index)
+					print "Step : " , index,' ' , inst.disassembly
+					inst.execute(context)
+				except text_end_exception as e:
+					print "Program exited " 
+					continue
+				except break_point_exception as e:
+					index = e.inst_index	
+					inst = pipeline.fetch(index)
+					print "Step : " , index,' ' , inst.disassembly
+					inst.execute(context)
+				continue
+			elif cmd[0] == 'c':
+				print "Continuing execution till next break point "
+
+
 			else:
 				print "Unrecognised command. Try help."
 				continue
@@ -280,7 +305,6 @@ def run(elf_file , debug = False):
 		while True:
 			try:
 				pc = context.get_regval('pc')
-				# change translator code
 				index= translator.translate(pc)
 				if index == -1:
 					break 

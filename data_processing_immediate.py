@@ -156,20 +156,16 @@ def interpret(opcode):
 				imm = hex(int(inst.opcode_br['imm12'], base = 2))
 				shift = hex(inst.opcode_br['shift'])
 				if instructions[i] == 'ADD_IMMEDIATE':
-					inst.disassembly = "ADD ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+					inst.disassembly = "ADD {0}, {1}, #{2} {3}".format(inst.opcode_br['Rd'], inst.opcode_br['Rn'], imm, shift)
 					inst.operation = ADD_IMMEDIATE_OP;
 				elif instructions[i] == 'ADDS_IMMEDIATE' :
-					inst.disassembly = "ADDS ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+					inst.disassembly = "ADDS{0}, {1}, #{2} {3}".format(inst.opcode_br['Rd'], inst.opcode_br['Rn'], imm, shift)
 					inst.operation = ADDS_IMMEDIATE_OP;
 				elif instructions[i] == 'SUB_IMMEDIATE':
-					inst.disassembly = "SUB ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+					inst.disassembly = "SUB {0}, {1}, #{2} {3}".format(inst.opcode_br['Rd'], inst.opcode_br['Rn'], imm, shift)
 					inst.operation = SUB_IMMEDIATE_OP;
 				elif instructions[i] == 'SUBS_IMMEDIATE' :
-					inst.disassembly = "SUBS ", inst.opcode_br['Rd']+", ", 
-					inst.opcode_br['Rn']+", ", "#<"+imm+">{, <",shift,">}"
+					inst.disassembly = "SUBS {0}, {1}, #{2} {3}".format(inst.opcode_br['Rd'], inst.opcode_br['Rn'], imm, shift)
 					inst.operation = SUBS_IMMEDIATE_OP;
 
 
@@ -312,7 +308,15 @@ def interpret(opcode):
 					rd = int(inst.opcode_br['Rd'], base = 2)
 					Rd = 'x'+str(rd)
 				imm = hex(int(inst.opcode_br['hw']+ inst.opcode_br['imm16'], base=2))
-				inst.disassembly = 'MOV {0}, {1}'.format(Rd, imm)
+				if inst.opcode_br['opc'] == '00':
+					imm = int(imm, base=16)
+					imm = imm ^ 0x3ffff
+					imm = imm & 0x3ffff
+					imm = bin(imm)[2:]
+					imm = SInt(imm)
+					inst.disassembly = 'MOV {0}, {1}'.format(Rd, hex(imm))
+				else:
+					inst.disassembly = 'MOV {0}, {1}'.format(Rd, imm)
 				inst.operation = MOV_inverted_wide_immediate
 				return inst
 			elif instructions[i] == 'MOV_BITMASK_IMMEDIATE':

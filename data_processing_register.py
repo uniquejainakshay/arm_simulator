@@ -41,6 +41,10 @@ instructions = [
 'ASR_REGISTER',
 #11
 'MOV_register',
+#12
+'LSL_REGISTER',
+#13
+'LSR_REGISTER',
 ]
 
 
@@ -71,7 +75,10 @@ inst_mask = [
 '00000000001111110000011111111110', 
 #11
 '00000000000000000000010011111110',
-
+#12
+'00000000001111110000011111111110',
+#13
+'00000000001111110000011111111110',
 ]
 
 
@@ -101,7 +108,11 @@ inst_identifier = [
 #10
 '00000000000101000000001101011000', 
 #11
-'00000000000000000000000001010100'
+'00000000000000000000000001010100',
+#12
+'00000000000001000000001101011000',
+#13
+'00000000001001000000001101011000',
 ]
 
 def interpret(opcode):
@@ -198,15 +209,23 @@ def interpret(opcode):
 			
 
 
-				Rd = 'x' + str(d)
 				if opc_sf == '1':
 					# 64 bit execution
 					Rn = 'x' + str(n)
 					Rm = 'x' + str(m)
+					if d == 31:
+						Rd = 'sp'
+					else:
+						Rd = 'x' + str(d)
+
 				else:
 					# 32 bit execution
 					Rn = 'w' + str(n)
 					Rm = 'w' + str(m)
+					if d ==31:
+						Rd = 'wsp'
+					else:
+						Rd = 'w' + str(d)
 
 				if int(opc_shift, base=2) == 0:
 					shift = 'LSL'
@@ -223,9 +242,9 @@ def interpret(opcode):
 				if instructions[i] == 'ADD_SHIFTED_REGISTER':
 					inst.operation = ADD_SHIFTED_REGISTER_OP
 					if opc_sf == '1':
-						inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format('x' + str(d), Rn, Rm, shift, amount)
+						inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
 					else:
-						inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format('w' + str(d), Rn, Rm, shift, amount)
+						inst.disassembly = 'ADD {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
 				elif instructions[i] == 'ADDS_SHIFTED_REGISTER':
 					inst.operation = ADDS_SHIFTED_REGISTER_OP
 					inst.disassembly = 'ADDS {0}, {1}, {2}, {3} #{4}'.format(Rd, Rn, Rm, shift, amount)
@@ -279,9 +298,9 @@ def interpret(opcode):
 
 				inst = instruction(opcode)
 				if opcode[31] == '1':
-					inst.disassembly = "ASRV {0}, {1}, {2}".format('x' + str(d), 'x' + str(n) , 'x' + str(n))
+					inst.disassembly = "ASRV {0}, {1}, {2}".format('x' + str(d), 'x' + str(n) , 'x' + str(m))
 				else:
-					inst.disassembly = 'ASRV {0}, {1}, {2}'.format('w' + str(d), 'w' + str(n) , 'w' + str(n))
+					inst.disassembly = 'ASRV {0}, {1}, {2}'.format('w' + str(d), 'w' + str(n) , 'w' + str(m))
 
 				inst.operation = ASR_REGISTER_OP
 
@@ -312,6 +331,31 @@ def interpret(opcode):
 				inst.disassembly = 'MOV {0}, {1}'.format(Rd, Rm)
 				inst.operation = MOV_register
 				return inst
+			elif instructions[i] == 'LSL_REGISTER' or\
+			instructions[i] == 'LSR_REGISTER':
+				inst = instruction(opcode)
+				d = int(opcode[0:5][::-1], base=2)
+				n = int(opcode[5:10][::-1], base=2)
+				m = int(opcode[16:21][::-1], base=2)
+				if opcode[31] == '1':
+					Rd = 'x' + str(d)
+					Rn = 'x' + str(n)
+					Rm = 'x' + str(m)
+				else:
+					Rd = 'w' + str(d)
+					Rn = 'w' + str(n)
+					Rm = 'w' + str(m)
+				if instructions[i] == 'LSL_REGISTER':
+					inst.disassembly = 'LSL {0}, {1}, {2}'.format(Rd, Rn, Rm)
+					inst.operation = LSL_REGISTER_OP
+				elif instructions[i] == 'LSR_REGISTER':
+					inst.disassembly = 'LSR {0}, {1}, {2}'.format(Rd, Rn, Rm)
+					inst.operation = LSR_REGISTER_OP
+				return inst
+			elif instructions[i] == 'LSR_REGISTER':
+				inst = instruction(opcode)
+
+
 			else:
 				print "Unidentified"
 
@@ -406,18 +450,11 @@ def ADDS_SHIFTED_REGISTER_OP(inst, context):
 	shift_type = DecodeShift(inst.opcode_br['shift'])
 	shift_amount = UInt(inst.opcode_br['imm6'])
 
-	operand1 = context.get_regval(inst.opcode_br['Rn'])
-	if UInt(bin(operand1)[2:]) != SInt(bin(operand1)[2:]):
-		operand1 = SInt(bin(operand1)[2:])
-		if datasize == 64:
-			operand1 = twos_comp_64(operand1)
-		else:
-			operand1 = twos_comp_32(operand1)
-			operand1 = SignExtend(operand1, 64)
-			
-	else:	
-		operand1 = ZeroExtend(bin(operand1)[2:], 64)
-	
+	operand1 = bin(context.get_regval(inst.opcode_br['Rn']))[2:]
+	if len(operand1) < 32:
+		operand1 = ZeroExtend(operand1, 64)
+	else : 
+		operand1 = SignExtend(operand1, 64)
 	operand2 = ShiftReg(context.get_regval(inst.opcode_br['Rm']), shift_type, shift_amount)
 	if datasize == 32:
 		operand2 = operand2[::-1][0:32][::-1]
@@ -509,7 +546,11 @@ def SUB_SHIFTED_REGISTER_OP(inst, context):
 	# here we need to set the x register
 	reg_no = inst.opcode_br['Rd'][1:]
 	#print "result " , result, " reg no " , reg_no
-	context.set_regval('x' + reg_no, result)
+	print inst.opcode_br['Rd'] 
+	if inst.opcode_br['Rd'] == 'sp' or inst.opcode_br['Rd'] == 'wsp':
+		context.set_regval(inst.opcode_br['Rd'], result)
+	else:
+		context.set_regval('x' + reg_no, result)
 	pc = context.get_regval('pc')
 	pc += 4
 	context.set_regval('pc', pc)
@@ -530,7 +571,10 @@ def SUBS_SHIFTED_REGISTER_OP(inst, context):
 	# here we need to set the x register
 	reg_no = inst.opcode_br['Rd'][1:]
 	#print "result " , result, " reg no " , reg_no
-	context.set_regval('x' + reg_no, result)
+	if inst.opcode_br['Rd'] == 'sp' or inst.opcode_br['Rd'] == 'wsp':
+		context.set_regval(inst.opcode_br['Rd'], result)
+	else:
+		context.set_regval('x' + reg_no, result)
 	# setting the flags as it is adds instruction
 	context.flags['n'] = n
 	context.flags['z'] = z
@@ -587,3 +631,47 @@ def MOV_register(inst, context):
 	pc = context.get_regval('pc')
 	pc += 4
 	context.set_regval('pc', pc)		
+
+def LSL_REGISTER_OP(inst, context):
+	opcode = inst.opcode
+	d = int(opcode[0:5][::-1], base=2)
+	n = int(opcode[5:10][::-1], base=2)
+	m = int(opcode[16:21][::-1], base=2)
+	Rd = 'x' + str(d)
+	if opcode[31] == '1':
+		Rn = 'x' + str(n)
+		Rm = 'x' + str(m)
+	else:
+		Rn = 'w' + str(n)
+		Rm = 'w' + str(m)
+	op1 = context.get_regval(Rn)
+	op2 = context.get_regval(Rm)
+	op1 = op1 >> op2
+	result = op1 & 0xffffffffffffffff
+	context.set_regval(Rd, result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)		
+
+
+def LSR_REGISTER_OP(inst, context):
+	opcode = inst.opcode
+	d = int(opcode[0:5][::-1], base=2)
+	n = int(opcode[5:10][::-1], base=2)
+	m = int(opcode[16:21][::-1], base=2)
+	Rd = 'x' + str(d)
+	if opcode[31] == '1':
+		Rn = 'x' + str(n)
+		Rm = 'x' + str(m)
+	else:
+		Rn = 'w' + str(n)
+		Rm = 'w' + str(m)
+	op1 = context.get_regval(Rn)
+	op2 = context.get_regval(Rm)
+	op1 = op1 << op2
+	result = op1 & 0xffffffffffffffff
+	context.set_regval(Rd, result)
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)		
+
