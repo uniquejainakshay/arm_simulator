@@ -36,7 +36,11 @@ instructions = [
 'MOV_wide_immediate', 
 #11
 'MOV_BITMASK_IMMEDIATE',
+#12
+'ADRP'
+
 ]
+
 
 
 ####### 	Instruction mask
@@ -66,6 +70,8 @@ inst_mask = [
 '00000000000000000000000111111110',
 #11
 '00000000000000000000000111111110',
+#12
+'00000000000000000000000011111001'
 ]
 
 
@@ -96,6 +102,8 @@ inst_identifier = [
 '00000000000000000000000101001010',
 #11
 '00000000000000000000000001001100',
+#12
+'00000000000000000000000000001001',
 ]
 
 def interpret(opcode):
@@ -107,7 +115,7 @@ def interpret(opcode):
 				instructions[i] == 'ADDS_IMMEDIATE' or\
 				instructions[i] == 'SUB_IMMEDIATE' or\
 				instructions[i] == 'SUBS_IMMEDIATE':
-				print instructions[i]
+				#print instructions[i]
 				inst = instruction(opcode)
 				inst.opcode_br['sf'] = opcode[31]
 				inst.opcode_br['op'] = opcode[30]
@@ -216,8 +224,9 @@ def interpret(opcode):
 				
 				inst.operation = AND_IMMEDIATE;
 				return inst
-			elif instructions[i] == 'ADR':
-				# ADR
+			elif instructions[i] == 'ADR' or \
+			     instructions[i] == 'ADRP':
+				# ADR or ADRP
 				inst = instruction(opcode)
 				inst.opcode_br['op'] = opcode[31]
 				inst.opcode_br['immlo'] = opcode[29:31][::-1]
@@ -226,8 +235,11 @@ def interpret(opcode):
 				
 				hi = inst.opcode_br['immhi']
 				lo = inst.opcode_br['immlo']
-
-				inst.disassembly = 'ADR {0}, {1}'.format(inst.opcode_br['Rd'], int( hi+lo, base = 2))
+				
+				if inst.opcode_br['op'] == '0':
+					inst.disassembly = 'ADR {0}, {1}'.format(inst.opcode_br['Rd'], int( hi+lo, base = 2))
+				else:
+					inst.disassembly = 'ADRP {0}, {1}'.format(inst.opcode_br['Rd'], int( hi+lo+Zeros(12), base = 2))	
 				
 				inst.operation = ADR;
 				return inst	
@@ -545,7 +557,7 @@ def MOV_BITMASK_IMMEDIATE_OP(inst , context):
 	imms = opcode[10:16][::-1]
 	immr = opcode[16:22][::-1]
 	imm = DecodeBitMasks(N , imms, immr, True, datasize)
-	print "val of n " , n
+	#print "val of n " , n
 	operand1 = context.get_regval('x' + str(n))
 	operand2 = int(imm, base=2)
 

@@ -26,7 +26,11 @@ instructions = [
 #5
 'CBNZ',
 #6
-'CBZ'
+'CBZ',
+#7
+'RET',
+#8
+'NOP'
 ]
 
 
@@ -46,7 +50,11 @@ inst_mask = [
 #5
 '00000000000000000000000011111110',
 #6
-'00000000000000000000000011111110'
+'00000000000000000000000011111110',
+#7
+'11111000001111111111111111111111',
+#8
+'11111000000011111111111111111111'
 ]
 
 
@@ -66,7 +74,11 @@ inst_identifier = [
 #5
 '00000000000000000000000010101100',
 #6
-'00000000000000000000000000101100'
+'00000000000000000000000000101100',
+#7
+'00000000000000001111101001101011',
+#8
+'11111000000001001100000010101011'
 ]
 
 
@@ -141,8 +153,28 @@ def interpret(opcode):
 					inst.disassembly = "CBNZ {0}, {1}".format('x'+str(rt), int(inst.opcode_br['imm19'], base = 2)*4)
 					
 				inst.operation = CBNZ
-				return inst				
+				return inst
 			
+			elif instructions[i] == 'RET':
+				inst = instruction(opcode)
+				inst.opcode_br['Rn'] = opcode[5:10][::-1]
+				inst.opcode_br['op'] = opcode[21:23][::-1]
+				
+				rn = int(inst.opcode_br['Rn'], base = 2)
+				inst.disassembly = "RET {0}".format('x'+str(rn))
+					
+				inst.operation = RET
+				return inst									
+
+			elif instructions[i] == 'NOP':
+				inst = instruction(opcode)
+				inst.opcode_br['CRm'] = opcode[8:12][::-1]
+				inst.opcode_br['op2'] = opcode[5:8][::-1]
+				
+				inst.disassembly = "NOP"
+					
+				inst.operation = NOP
+				return inst
 	print "Unindentified instruction"
 
 def B_cond(inst , context):
@@ -195,3 +227,14 @@ def CBNZ(inst , context):
 		pc = context.get_regval('pc')
 		pc += 4
 		context.set_regval('pc', pc)			
+
+def RET(inst , context):
+	n = UInt(inst.opcode_br['Rn']);
+	target = context.get_regval('x'+str(n))
+	context.set_regval('pc', target)
+
+def NOP(inst , context):	
+	pc = context.get_regval('pc')
+	pc += 4
+	context.set_regval('pc', pc)			
+	pass
